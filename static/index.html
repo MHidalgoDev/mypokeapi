@@ -2,55 +2,25 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>CRUD Usuarios</title>
+  <title>Pokédex</title>
 </head>
 <body>
-  <h1>CRUD Usuarios</h1>
-
-  <form id="formUsuario">
-    <input type="text" id="nombre" placeholder="Nombre" required />
-    <input type="email" id="email" placeholder="Email" required />
-    <button type="submit">Crear Usuario</button>
-  </form>
-
-  <h2>Lista de Usuarios</h2>
-  <ul id="listaUsuarios"></ul>
+  <h1>Pokémons</h1>
+  <ul id="pokemon-list"></ul>
 
   <script>
-    const form = document.getElementById("formUsuario");
-    const lista = document.getElementById("listaUsuarios");
-
-    async function cargarUsuarios() {
-      const res = await fetch("/usuarios/");
-      const usuarios = await res.json();
-      lista.innerHTML = "";
-      usuarios.forEach(u => {
-        const li = document.createElement("li");
-        li.textContent = `${u.id}: ${u.nombre} (${u.email})`;
-        lista.appendChild(li);
+    async function fetchPokemons() {
+      const response = await fetch('/pokemons/');
+      const pokemons = await response.json();
+      const list = document.getElementById('pokemon-list');
+      list.innerHTML = '';
+      pokemons.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `${p.numero_pokedex} - ${p.nombre} (${p.tipo})`;
+        list.appendChild(li);
       });
     }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const nombre = document.getElementById("nombre").value;
-      const email = document.getElementById("email").value;
-
-      const res = await fetch("/usuarios/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, email }),
-      });
-
-      if (res.ok) {
-        form.reset();
-        cargarUsuarios();
-      } else {
-        alert("Error al crear usuario");
-      }
-    });
-
-    cargarUsuarios();
+    fetchPokemons();
   </script>
 </body>
 </html>

@@ -1,13 +1,15 @@
-from pydantic import BaseModel, EmailStr
+# app/schemas.py
+from pydantic import BaseModel
 
-class UsuarioBase(BaseModel):
+class PokemonBase(BaseModel):
     nombre: str
-    email: EmailStr
+    tipo: str
+    numero_pokedex: int
 
-class UsuarioCreate(UsuarioBase):
+class PokemonCreate(PokemonBase):
     pass
 
-class Usuario(UsuarioBase):
+class Pokemon(PokemonBase):
     id: int
 
     class Config:
