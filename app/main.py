@@ -1,15 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from app import crud, models, schemas
-from app.database import SessionLocal, engine
-from fastapi.staticfiles import StaticFiles  # <-- importamos
+import os
 
-models.Base.metadata.create_all(bind=engine)
+from . import models, schemas, crud
+from .database import SessionLocal, engine, Base
 
 app = FastAPI()
 
-# Montamos el frontend estático (HTML/JS/CSS)
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+# Crear tablas
+Base.metadata.create_all(bind=engine)
+
+# Montar static en /static
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+async def root():
+    return FileResponse(os.path.join("static", "index.html"))
 
 def get_db():
     db = SessionLocal()
@@ -18,9 +26,16 @@ def get_db():
     finally:
         db.close()
 
-# Aquí van tus endpoints REST
 @app.post("/pokemons/", response_model=schemas.Pokemon)
 def create_pokemon(pokemon: schemas.PokemonCreate, db: Session = Depends(get_db)):
-    return crud.create_pokemon(db=db, pokemon=pokemon)
+    existing = db.query(models.Pokemon).filter(
+        (models.Pokemon.nombre == pokemon.nombre) | 
+        (models.Pokemon.numero == pokemon.numero)
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Pokemon ya existe")
+    return crud.create_pokemon(db, pokemon)
 
-# ... (los demás endpoints)
+@app.get("/pokemons/", response_model=list[schemas.Pokemon])
+def read_pokemons(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_pokemons(db, skip=skip, limit=limit)

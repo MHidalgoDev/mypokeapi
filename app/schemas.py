@@ -1,10 +1,9 @@
-# app/schemas.py
 from pydantic import BaseModel
 
 class PokemonBase(BaseModel):
     nombre: str
     tipo: str
-    numero_pokedex: int
+    numero: int
 
 class PokemonCreate(PokemonBase):
     pass

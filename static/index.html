@@ -2,25 +2,136 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Pokédex</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestión de Pokémon</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 30px auto;
+    }
+    label, input, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      padding: 8px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #mensaje {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #mensaje.error {
+      color: red;
+    }
+    #mensaje.success {
+      color: green;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #f0f0f0;
+      margin-bottom: 6px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Pokémons</h1>
-  <ul id="pokemon-list"></ul>
+
+  <h1>Gestión de Pokémon</h1>
+
+  <form id="pokeForm">
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre" name="nombre" required />
+
+    <label for="tipo">Tipo:</label>
+    <input type="text" id="tipo" name="tipo" required />
+
+    <label for="numero">Número:</label>
+    <input type="number" id="numero" name="numero" required min="1" />
+
+    <button type="submit">Añadir Pokémon</button>
+  </form>
+
+  <div id="mensaje"></div>
+
+  <h2>Lista de Pokémon</h2>
+  <ul id="listaPokemons"></ul>
 
   <script>
-    async function fetchPokemons() {
-      const response = await fetch('/pokemons/');
-      const pokemons = await response.json();
-      const list = document.getElementById('pokemon-list');
-      list.innerHTML = '';
-      pokemons.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `${p.numero_pokedex} - ${p.nombre} (${p.tipo})`;
-        list.appendChild(li);
-      });
+    const form = document.getElementById('pokeForm');
+    const mensaje = document.getElementById('mensaje');
+    const listaPokemons = document.getElementById('listaPokemons');
+
+    const API_URL = 'http://127.0.0.1:8000/pokemons/';
+
+    // Función para mostrar mensaje
+    function mostrarMensaje(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = tipo;
+      setTimeout(() => {
+        mensaje.textContent = '';
+        mensaje.className = '';
+      }, 4000);
     }
-    fetchPokemons();
+
+    // Función para cargar y mostrar pokemons
+    async function cargarPokemons() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('No se pudo cargar la lista.');
+        const pokemons = await res.json();
+        listaPokemons.innerHTML = pokemons.map(p =>
+          `<li><strong>${p.nombre}</strong> (#${p.numero}) - Tipo: ${p.tipo}</li>`
+        ).join('');
+      } catch (error) {
+        listaPokemons.innerHTML = '<li>Error al cargar pokemons.</li>';
+      }
+    }
+
+    // Envío del formulario para añadir pokemon
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nombre = form.nombre.value.trim();
+      const tipo = form.tipo.value.trim();
+      const numero = parseInt(form.numero.value);
+
+      if (!nombre || !tipo || isNaN(numero) || numero < 1) {
+        mostrarMensaje('Rellena todos los campos correctamente.', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, tipo, numero }),
+        });
+
+        if (res.ok) {
+          const nuevoPokemon = await res.json();
+          mostrarMensaje(`Pokémon ${nuevoPokemon.nombre} añadido con éxito!`, 'success');
+          form.reset();
+          cargarPokemons();
+        } else {
+          const err = await res.json();
+          mostrarMensaje(err.detail || 'Error al añadir pokemon.', 'error');
+        }
+      } catch (error) {
+        mostrarMensaje('Error de conexión con el servidor.', 'error');
+      }
+    });
+
+    // Cargar lista al inicio
+    cargarPokemons();
   </script>
+
 </body>
 </html>
